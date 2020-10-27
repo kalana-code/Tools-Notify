@@ -1,6 +1,7 @@
 package subscriber
 
 type SubscribeRequest struct{
+	Name string
 	Email string
-	SubscribeLevelCount int
+	LevelCount int
 }
