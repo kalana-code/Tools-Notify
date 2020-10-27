@@ -36,32 +36,33 @@ func AppVerify(next http.Handler) http.Handler {
 			return
 		}
 
-		_, err := jwt.Parse(header,func(token *jwt.Token) (interface{}, error) {
+		_, err := jwt.Parse(header, func(token *jwt.Token) (interface{}, error) {
 			return []byte(os.Getenv("jwtSecret")), nil
 		})
 
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			resp.Code = 403
-			resp.Message = "Restricted : "+err.Error()
+			resp.Message = "Restricted : " + err.Error()
 			json.NewEncoder(w).Encode(resp)
 			log.Println("ERROR: Token encording  process is failed due to. ", err)
 			return
 		}
 
 		var applicationId string
+		var applicationName string
 		dbConnection, err := db.GetMySQLConnection()
-		if(err !=nil){
+		if err != nil {
 			resp.Code = 500
-			resp.Message = "Internal Server Error: "+err.Error()
+			resp.Message = "Internal Server Error: " + err.Error()
 			json.NewEncoder(w).Encode(resp)
 			log.Println("ERROR: Error when establishing db connections.", err)
 			return
 		}
-		stmtOut, err := dbConnection.Prepare("SELECT application_id FROM app_keys WHERE application_access_key	 = ?")
+		stmtOut, err := dbConnection.Prepare("SELECT application_id,application_name FROM app_keys WHERE application_access_key	 = ?")
 		if err != nil {
 			resp.Code = 500
-			resp.Message = "Internal Server Error: "+err.Error()
+			resp.Message = "Internal Server Error: " + err.Error()
 			json.NewEncoder(w).Encode(resp)
 			log.Println("ERROR: Error when establishing db connections.", err)
 			return
@@ -69,16 +70,17 @@ func AppVerify(next http.Handler) http.Handler {
 
 		err = stmtOut.QueryRow(accessToken).Scan(
 			&applicationId,
+			&applicationName,
 		)
-		if(err!=nil){
+		if err != nil {
 			resp.Code = 500
-			resp.Message = "Internal Server Error: "+err.Error()
+			resp.Message = "Internal Server Error: " + err.Error()
 			json.NewEncoder(w).Encode(resp)
 			log.Println("ERROR: Error when executing query.", err)
 			return
 		}
 
-		if(applicationId == ""){
+		if applicationId == "" {
 			resp.Code = 403
 			resp.Message = "Restricted: No application for given access token"
 			json.NewEncoder(w).Encode(resp)
@@ -88,7 +90,12 @@ func AppVerify(next http.Handler) http.Handler {
 
 		log.Println("INFO: [AU]: Valid Application.")
 
-		ctx := context.WithValue(r.Context(), "applicationId", applicationId)
+		ctx := context.WithValue(r.Context(), "appContext",
+			map[string]string{
+				"ApplicationID" :   applicationId,
+				"ApplicationName" : applicationName,
+			},
+		)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

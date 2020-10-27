@@ -38,6 +38,7 @@ func Handlers() *mux.Router {
 	d.HandleFunc("/events", event.Events).Methods("POST", "OPTIONS")
 	d.HandleFunc("/subscribe", subscriber.Subscribe).Methods("POST", "OPTIONS")
 
+	d.HandleFunc("/subscriber/{level:[0-9]+}", subscriber.SubscribersListForGivenLevel).Methods("GET", "OPTIONS")
 	return r
 }
 

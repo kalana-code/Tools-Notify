@@ -51,6 +51,11 @@ func (obj *Response) InternalServerError() {
 	obj.Message = "Internal Server Error"
 }
 
+func (obj *Response) RestrictedError() {
+	obj.Code = http.StatusForbidden
+	obj.Status = "Failed"
+	obj.Message = "Restricted "
+}
 // UserLogin is model is used for login process
 type UserLogin struct {
 	Email    string `json:"Email"`

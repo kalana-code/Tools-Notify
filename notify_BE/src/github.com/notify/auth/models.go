@@ -20,3 +20,4 @@ type ApplicationKey struct {
 	ApplicationName string
 	*jwt.StandardClaims
 }
+
